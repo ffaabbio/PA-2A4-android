@@ -87,6 +87,17 @@ class PrestationsActivity : AppCompatActivity() {
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == DETAIL_REQUEST_CODE && resultCode == RESULT_OK) {
+            val userId = getSharedPreferences("user_prefs", MODE_PRIVATE).getInt("user_id", -1)
+            if (userId != -1) {
+                loadPrestations(userId)
+            }
+        }
+    }
+
     override fun onSupportNavigateUp(): Boolean {
         onBackPressed()
         return true

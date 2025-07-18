@@ -61,7 +61,7 @@
 
             <TextView
                 android:id="@+id/textViewName"
-                android:text="Nom : Fabio Dugay"
+                android:text="Nom"
                 android:textSize="16sp"
                 android:layout_marginBottom="8dp"
                 android:layout_width="wrap_content"
@@ -69,17 +69,9 @@
 
             <TextView
                 android:id="@+id/textViewEmail"
-                android:text="Email : fabio@ecodeli.com"
+                android:text="Email"
                 android:textSize="16sp"
                 android:layout_marginBottom="8dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-
-            <TextView
-                android:id="@+id/textViewAbonnement"
-                android:text="Abonnement : Premium"
-                android:textSize="16sp"
-                android:layout_marginBottom="24dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
 

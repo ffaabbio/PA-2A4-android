@@ -55,7 +55,11 @@ class LoginActivity : AppCompatActivity() {
 
                         // Enregistrement de l'ID utilisateur
                         val sharedPref = getSharedPreferences("user_prefs", MODE_PRIVATE)
-                        sharedPref.edit().putInt("user_id", user?.id ?: -1).apply()
+                        sharedPref.edit()
+                            .putInt("user_id", user?.id ?: -1)
+                            .putString("user_name", user?.name)
+                            .putString("user_email", user?.email)
+                            .apply()
 
                         // Redirection
                         val intent = Intent(this@LoginActivity, MainActivity::class.java)

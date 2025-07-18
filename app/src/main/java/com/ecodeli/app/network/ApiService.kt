@@ -16,6 +16,9 @@ interface ApiService {
     @POST("api/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
+    @POST("api/logout")
+    suspend fun logout(): Response<LoginResponse>
+
     @GET("api/annonces/transport")
     suspend fun getTransportAnnonces(@Query("user_id") userId: Int): Response<TransportAnnonceResponse>
 
@@ -23,10 +26,11 @@ interface ApiService {
     suspend fun getPrestationAnnonces(@Query("user_id") userId: Int): Response<PrestationAnnonceResponse>
 
     @POST("api/annonces/prestation/{id}/valider")
-    suspend fun validerPrestation(
-        @Path("id") id: Int,
-        @Query("user_id") userId: Int
-    ): Response<ResponseBody>
+    suspend fun validerPrestation(@Path("id") id: Int, @Query("user_id") userId: Int): Response<ResponseBody>
+
+    @POST("api/annonces/transport/{id}/valider")
+    suspend fun validerLivraison(@Path("id") id: Int, @Query("user_id") userId: Int): Response<ResponseBody>
+
 
 
 }

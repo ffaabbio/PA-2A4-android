@@ -22,6 +22,11 @@ class AnnonceRepository {
         return apiService.validerPrestation(id, userId)
     }
 
+    suspend fun validerLivraison(id: Int, userId: Int): Response<ResponseBody> {
+        return apiService.validerLivraison(id, userId)
+    }
+
+
 
 
 

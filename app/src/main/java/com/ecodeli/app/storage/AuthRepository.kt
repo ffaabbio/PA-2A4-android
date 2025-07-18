@@ -13,4 +13,9 @@ class AuthRepository {
     suspend fun login(request: LoginRequest): Response<LoginResponse> {
         return apiService.login(request)
     }
+
+    suspend fun logout(): Response<LoginResponse> {
+        return apiService.logout()
+    }
+
 }

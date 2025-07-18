@@ -14,6 +14,7 @@ import com.ecodeli.app.storage.AnnonceRepository
 
 class LivraisonsActivity : AppCompatActivity() {
 
+    private val DETAIL_REQUEST_CODE = 1002
     private lateinit var container: LinearLayout
     private val repository = AnnonceRepository()
 
@@ -67,19 +68,35 @@ class LivraisonsActivity : AppCompatActivity() {
             view.findViewById<TextView>(R.id.textViewVilles).text = "${annonce.from_city} → ${annonce.to_city}"
             view.findViewById<TextView>(R.id.textViewPrix).text = "${annonce.price} €"
             view.findViewById<TextView>(R.id.textViewDate).text = annonce.preferred_date
+            view.findViewById<TextView>(R.id.textViewStatus).text = annonce.status
+
 
             view.findViewById<Button>(R.id.buttonVoirDetail).setOnClickListener {
                 val intent = Intent(this, LivraisonDetailActivity::class.java)
+                intent.putExtra("ID", annonce.id)
+                intent.putExtra("USER_ID", annonce.user_id)
                 intent.putExtra("TITRE", annonce.title)
                 intent.putExtra("FROM_CITY", annonce.from_city)
                 intent.putExtra("TO_CITY", annonce.to_city)
                 intent.putExtra("PREFERRED_DATE", annonce.preferred_date)
+                intent.putExtra("STATUS", annonce.status)
                 intent.putExtra("PRICE", annonce.price)
                 intent.putExtra("DESCRIPTION", annonce.description)
-                startActivity(intent)
+                startActivityForResult(intent, DETAIL_REQUEST_CODE)
             }
 
             container.addView(view)
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == DETAIL_REQUEST_CODE && resultCode == RESULT_OK) {
+            val userId = getSharedPreferences("user_prefs", MODE_PRIVATE).getInt("user_id", -1)
+            if (userId != -1) {
+                loadLivraisons(userId)
+            }
         }
     }
 
