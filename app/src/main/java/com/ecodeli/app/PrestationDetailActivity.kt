@@ -6,10 +6,11 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.lifecycle.lifecycleScope
+import com.ecodeli.app.storage.AnnonceRepository
+import kotlinx.coroutines.launch
 
 class PrestationDetailActivity : AppCompatActivity() {
-
-    private var statutPrestation = "En cours"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -20,41 +21,61 @@ class PrestationDetailActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowTitleEnabled(false)
 
-        val titre = intent.getStringExtra("TITLE") ?: "Titre inconnu"
-        val type = intent.getStringExtra("TYPE") ?: "Type inconnu"
-        val date = intent.getStringExtra("DATE") ?: "Date inconnue"
-        val status = intent.getStringExtra("STATUS") ?: "Statut inconnu"
-        val description = intent.getStringExtra("DESCRIPTION") ?: "Aucune description"
+        // Données transmises
+        val titre = intent.getStringExtra("TITRE") ?: "-"
+        val description = intent.getStringExtra("DESCRIPTION") ?: "-"
+        val date = intent.getStringExtra("PREFERRED_DATE") ?: "-"
+        val prix = intent.getStringExtra("PRICE") ?: "-"
+        val status = intent.getStringExtra("STATUS") ?: "-"
 
-        statutPrestation = status
-
-        val textViewTitle = findViewById<TextView>(R.id.textViewTitle)
-        val textViewDescription = findViewById<TextView>(R.id.textViewDescription)
-        val textViewDetails = findViewById<TextView>(R.id.textViewDetails)
-        val buttonValidate = findViewById<Button>(R.id.buttonValidate)
-
-        textViewTitle.text = titre
-        textViewDescription.text = description
-
-        val fakeDetails = """
-            Type : $type
+        // Affectation aux vues
+        findViewById<TextView>(R.id.textViewTitle).text = titre
+        findViewById<TextView>(R.id.textViewDescription).text = description
+        findViewById<TextView>(R.id.textViewDetails).text = """
             Date souhaitée : $date
-            Statut : $statutPrestation
+            Prix : $prix €
+            Statut : $status
         """.trimIndent()
 
-        textViewDetails.text = fakeDetails
+        val id = intent.getIntExtra("ID", -1)
 
-        buttonValidate.setOnClickListener {
-            if (statutPrestation == "Terminée") {
-                Toast.makeText(this, "Cette prestation est déjà validée.", Toast.LENGTH_SHORT).show()
+        findViewById<Button>(R.id.buttonValidate).setOnClickListener {
+            if (id != -1) {
+                validatePrestation(id)
             } else {
-                statutPrestation = "Terminée"
-                val updatedDetails = fakeDetails.replace(status, statutPrestation)
-                textViewDetails.text = updatedDetails
-                Toast.makeText(this, "Prestation validée !", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "ID de prestation invalide", Toast.LENGTH_SHORT).show()
             }
         }
     }
+
+    private fun validatePrestation(id: Int) {
+        lifecycleScope.launch {
+            try {
+                val userId = getSharedPreferences("user_prefs", MODE_PRIVATE)
+                    .getInt("user_id", -1)
+
+                if (userId == -1) {
+                    Toast.makeText(this@PrestationDetailActivity, "Utilisateur non connecté", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+
+                val response = AnnonceRepository().validerPrestation(id, userId)
+
+                if (response.isSuccessful) {
+                    Toast.makeText(this@PrestationDetailActivity, "Prestation validée avec succès", Toast.LENGTH_SHORT).show()
+                    setResult(RESULT_OK)
+                    finish()
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Toast.makeText(this@PrestationDetailActivity, "Erreur : ${response.code()} - $errorBody", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this@PrestationDetailActivity, "Erreur réseau : ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+
 
     override fun onSupportNavigateUp(): Boolean {
         onBackPressed()

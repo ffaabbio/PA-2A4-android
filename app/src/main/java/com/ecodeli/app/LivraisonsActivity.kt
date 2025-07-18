@@ -2,12 +2,21 @@ package com.ecodeli.app
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.util.Log
+import android.view.LayoutInflater
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.lifecycle.lifecycleScope
+import com.ecodeli.app.model.AnnonceTransport
+import kotlinx.coroutines.launch
+import com.ecodeli.app.storage.AnnonceRepository
 
 class LivraisonsActivity : AppCompatActivity() {
+
+    private lateinit var container: LinearLayout
+    private val repository = AnnonceRepository()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_livraisons)
@@ -17,30 +26,60 @@ class LivraisonsActivity : AppCompatActivity() {
         supportActionBar?.setDisplayShowTitleEnabled(false)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        val container = findViewById<LinearLayout>(R.id.containerLivraisons)
+        container = findViewById(R.id.containerLivraisons)
 
-        val livraisons = listOf(
-            LivraisonFake("Colis #1", "Paris", "Marseille", "25.00 €", "2025-07-15"),
-            LivraisonFake("Colis #2", "Lyon", "Lille", "40.00 €", "2025-07-18"),
-            LivraisonFake("Colis #3", "Montpellier", "Rennes", "30.50 €", "2025-07-20")
-        )
+        val userId = getSharedPreferences("user_prefs", MODE_PRIVATE)
+            .getInt("user_id", -1)
 
-        livraisons.forEach { livraison ->
-            val livraisonView = layoutInflater.inflate(R.layout.item_livraison, null)
+        if (userId != -1) {
+            loadLivraisons(userId)
+        } else {
+            Toast.makeText(this, "Utilisateur non connecté", Toast.LENGTH_SHORT).show()
+        }
+    }
 
-            livraisonView.findViewById<TextView>(R.id.textViewTitle).text = livraison.titre
-            livraisonView.findViewById<TextView>(R.id.textViewVilles).text =
-                "${livraison.fromCity} → ${livraison.toCity}"
-            livraisonView.findViewById<TextView>(R.id.textViewPrix).text = livraison.prix
-            livraisonView.findViewById<TextView>(R.id.textViewDate).text = livraison.date
+    private fun loadLivraisons(userId: Int) {
+        lifecycleScope.launch {
+            try {
+                val response = repository.getTransportAnnonces(userId)
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val annonces = response.body()?.annonces ?: emptyList()
+                    displayLivraisons(annonces)
+                } else {
+                    Toast.makeText(this@LivraisonsActivity, "Erreur serveur : ${response.code()}", Toast.LENGTH_SHORT).show()
+                    Log.e("Livraisons", "Erreur : ${response.errorBody()?.string()}")
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this@LivraisonsActivity, "Erreur réseau : ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                Log.e("Livraisons", "Exception : ${e.message}", e)
+            }
+        }
+    }
 
-            livraisonView.findViewById<android.widget.Button>(R.id.buttonVoirDetail).setOnClickListener {
+    private fun displayLivraisons(annonces: List<AnnonceTransport>) {
+        val inflater = LayoutInflater.from(this)
+        container.removeAllViews()
+
+        for (annonce in annonces) {
+            val view = inflater.inflate(R.layout.item_livraison, container, false)
+
+            view.findViewById<TextView>(R.id.textViewTitle).text = annonce.title
+            view.findViewById<TextView>(R.id.textViewVilles).text = "${annonce.from_city} → ${annonce.to_city}"
+            view.findViewById<TextView>(R.id.textViewPrix).text = "${annonce.price} €"
+            view.findViewById<TextView>(R.id.textViewDate).text = annonce.preferred_date
+
+            view.findViewById<Button>(R.id.buttonVoirDetail).setOnClickListener {
                 val intent = Intent(this, LivraisonDetailActivity::class.java)
-                intent.putExtra("TITRE", livraison.titre)
+                intent.putExtra("TITRE", annonce.title)
+                intent.putExtra("FROM_CITY", annonce.from_city)
+                intent.putExtra("TO_CITY", annonce.to_city)
+                intent.putExtra("PREFERRED_DATE", annonce.preferred_date)
+                intent.putExtra("PRICE", annonce.price)
+                intent.putExtra("DESCRIPTION", annonce.description)
                 startActivity(intent)
             }
 
-            container.addView(livraisonView)
+            container.addView(view)
         }
     }
 
@@ -49,11 +88,3 @@ class LivraisonsActivity : AppCompatActivity() {
         return true
     }
 }
-
-data class LivraisonFake(
-    val titre: String,
-    val fromCity: String,
-    val toCity: String,
-    val prix: String,
-    val date: String
-)
